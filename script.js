@@ -1,84 +1,56 @@
 
-// INTRO SCREEN
-window.addEventListener("load", () => {
-  const intro = document.getElementById("introScreen");
+const intro = document.getElementById("intro");
 
-  setTimeout(() => {
-    if (intro) {
-      intro.classList.add("hide");
-    }
-  }, 2200);
+window.addEventListener("load", () => {
+  setTimeout(() => intro?.classList.add("hide"), 2200);
 });
 
-
-// STAR BACKGROUND
+// Star background
 const canvas = document.getElementById("stars");
 const ctx = canvas.getContext("2d");
-
 let stars = [];
-let canvasWidth = 0;
-let canvasHeight = 0;
 
-function resizeCanvas() {
-  canvasWidth = window.innerWidth;
-  canvasHeight = window.innerHeight;
+function resizeStars() {
+  canvas.width = window.innerWidth * devicePixelRatio;
+  canvas.height = window.innerHeight * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
 
-  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-
-  canvas.width = canvasWidth * pixelRatio;
-  canvas.height = canvasHeight * pixelRatio;
-
-  canvas.style.width = canvasWidth + "px";
-  canvas.style.height = canvasHeight + "px";
-
-  ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-
-  stars = [];
-
-  const numberOfStars = Math.min(
-    Math.floor((canvasWidth * canvasHeight) / 5500),
-    220
-  );
-
-  for (let i = 0; i < numberOfStars; i++) {
-    stars.push({
-      x: Math.random() * canvasWidth,
-      y: Math.random() * canvasHeight,
-      radius: Math.random() * 1.4 + 0.3,
-      opacity: Math.random() * 0.7 + 0.2,
-      speed: Math.random() * 0.004 + 0.001,
-      phase: Math.random() * Math.PI * 2
-    });
-  }
+  stars = Array.from({
+    length: Math.min(180, Math.floor(window.innerWidth / 5))
+  }, () => ({
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    size: Math.random() * 1.5 + .3,
+    opacity: Math.random(),
+    speed: Math.random() * .008 + .002
+  }));
 }
 
-function animateStars() {
-  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+function drawStars() {
+  ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-  stars.forEach((star) => {
-    star.phase += star.speed;
+  stars.forEach(star => {
+    star.opacity += star.speed;
 
-    const opacity =
-      star.opacity * (0.65 + Math.sin(star.phase) * 0.35);
+    if (star.opacity > 1 || star.opacity < .15) {
+      star.speed *= -1;
+    }
 
     ctx.beginPath();
-    ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255, 235, 195, ${opacity})`;
+    ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,225,180,${star.opacity})`;
     ctx.fill();
   });
 
-  requestAnimationFrame(animateStars);
+  requestAnimationFrame(drawStars);
 }
 
-resizeCanvas();
-animateStars();
+resizeStars();
+drawStars();
+window.addEventListener("resize", resizeStars);
 
-window.addEventListener("resize", resizeCanvas);
-
-
-// LANGUAGE SWITCH
+// Language
 const languageBtn = document.getElementById("languageBtn");
-
 let currentLanguage = localStorage.getItem("portfolioLanguage") || "en";
 
 function setLanguage(language) {
@@ -86,160 +58,115 @@ function setLanguage(language) {
 
   document.documentElement.lang = language;
   document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
-  document.body.dir = language === "ar" ? "rtl" : "ltr";
 
-  document.querySelectorAll("[data-en][data-ar]").forEach((element) => {
-    const value = element.getAttribute(`data-${language}`);
-
-    if (value !== null) {
-      element.innerHTML = value;
-    }
+  document.querySelectorAll("[data-en][data-ar]").forEach(element => {
+    element.textContent = element.dataset[language];
   });
 
-  document.querySelectorAll("[data-placeholder-en][data-placeholder-ar]").forEach((element) => {
-    const value = element.getAttribute(`data-placeholder-${language}`);
-
-    if (value !== null) {
-      element.placeholder = value;
-    }
+  document.querySelectorAll("[data-placeholder-en][data-placeholder-ar]").forEach(element => {
+    element.placeholder = element.dataset[
+      language === "ar" ? "placeholderAr" : "placeholderEn"
+    ];
   });
 
   languageBtn.textContent = language === "en" ? "AR" : "EN";
-
   localStorage.setItem("portfolioLanguage", language);
 }
 
 languageBtn.addEventListener("click", () => {
-  const nextLanguage = currentLanguage === "en" ? "ar" : "en";
-  setLanguage(nextLanguage);
+  setLanguage(currentLanguage === "en" ? "ar" : "en");
 });
 
 setLanguage(currentLanguage);
 
-
-// THEME SWITCH
+// Theme
 const themeBtn = document.getElementById("themeBtn");
-
-let currentTheme = localStorage.getItem("portfolioTheme") || "dark";
+let savedTheme = localStorage.getItem("portfolioTheme") || "dark";
 
 function setTheme(theme) {
-  currentTheme = theme;
-
-  if (theme === "light") {
-    document.body.classList.add("light");
-    themeBtn.textContent = "☾";
-  } else {
-    document.body.classList.remove("light");
-    themeBtn.textContent = "☀";
-  }
-
+  document.body.classList.toggle("light", theme === "light");
+  themeBtn.textContent = theme === "light" ? "☾" : "☀";
   localStorage.setItem("portfolioTheme", theme);
 }
 
 themeBtn.addEventListener("click", () => {
-  const nextTheme = currentTheme === "dark" ? "light" : "dark";
-  setTheme(nextTheme);
+  savedTheme = savedTheme === "dark" ? "light" : "dark";
+  setTheme(savedTheme);
 });
 
-setTheme(currentTheme);
+setTheme(savedTheme);
 
-
-// MOBILE MENU
+// Mobile navigation
 const menuBtn = document.getElementById("menuBtn");
-const navLinks = document.getElementById("navLinks");
+const nav = document.getElementById("nav");
 
 menuBtn.addEventListener("click", () => {
-  navLinks.classList.toggle("open");
-  menuBtn.textContent = navLinks.classList.contains("open") ? "×" : "☰";
+  nav.classList.toggle("open");
 });
 
-document.querySelectorAll(".nav-links a").forEach((link) => {
+nav.querySelectorAll("a").forEach(link => {
   link.addEventListener("click", () => {
-    navLinks.classList.remove("open");
-    menuBtn.textContent = "☰";
+    nav.classList.remove("open");
   });
 });
 
+// Reveal animations
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add("visible");
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: .12 });
 
-// SCROLL REVEAL
-const revealObserver = new IntersectionObserver(
-  (entries, observer) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("visible");
-        observer.unobserve(entry.target);
-      }
-    });
-  },
-  {
-    threshold: 0.12
-  }
-);
-
-document.querySelectorAll(".reveal").forEach((element) => {
-  revealObserver.observe(element);
+document.querySelectorAll(".reveal").forEach(element => {
+  observer.observe(element);
 });
 
-
-// BACK TO TOP
-const backToTop = document.getElementById("backToTop");
+// Back to top
+const topBtn = document.getElementById("topBtn");
 
 window.addEventListener("scroll", () => {
-  if (window.scrollY > 450) {
-    backToTop.classList.add("show");
-  } else {
-    backToTop.classList.remove("show");
-  }
+  topBtn.classList.toggle("show", window.scrollY > 400);
 });
 
-backToTop.addEventListener("click", () => {
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
+topBtn.addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
-
-// CURRENT YEAR
+// Current year
 document.getElementById("year").textContent = new Date().getFullYear();
 
-
-// CONTACT FORM
+// Contact form: prepare an email
 const contactForm = document.getElementById("contactForm");
 
-contactForm.addEventListener("submit", (event) => {
+contactForm.addEventListener("submit", function(event) {
   event.preventDefault();
 
-  const name = document.getElementById("senderName").value.trim();
-  const fullName = document.getElementById("senderFullName").value.trim();
-  const email = document.getElementById("senderEmail").value.trim();
-  const phone = document.getElementById("senderPhone").value.trim();
-  const subject = document.getElementById("senderSubject").value.trim();
-  const message = document.getElementById("senderMessage").value.trim();
-
-  if (!name || !fullName || !email || !subject || !message) {
-    alert(
-      currentLanguage === "ar"
-        ? "من فضلك املأ كل البيانات المطلوبة."
-        : "Please fill in all required fields."
-    );
+  if (!contactForm.reportValidity()) {
     return;
   }
 
-  const body = `
-Name: ${name}
-Full Name: ${fullName}
-Email: ${email}
+  const firstName = document.getElementById("firstName").value.trim();
+  const lastName = document.getElementById("lastName").value.trim();
+  const phone = document.getElementById("visitorPhone").value.trim();
+  const email = document.getElementById("visitorEmail").value.trim();
+  const subject = document.getElementById("messageSubject").value.trim();
+  const message = document.getElementById("visitorMessage").value.trim();
+
+  const emailBody =
+`Name: ${firstName} ${lastName}
 Phone: ${phone}
+Email: ${email}
 
 Message:
-${message}
-  `;
+${message}`;
 
   const mailtoLink =
     `mailto:kingfathy850@gmail.com` +
     `?subject=${encodeURIComponent(subject)}` +
-    `&body=${encodeURIComponent(body)}`;
+    `&body=${encodeURIComponent(emailBody)}`;
 
   window.location.href = mailtoLink;
 });
